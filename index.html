@@ -2,34 +2,94 @@
 <html>
   <head>
     <title></title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
     <style type="text/css">
         html, body{
             padding: 0px;
             margin:0px;
+            font-family: "Montserrat", sans-serif;
         }
         .btn{
             background-color: #f5f6f7;
             padding: 10px;
             display: inline-block;
+            margin-right: 5px;
         }
         .btn-group{
             position: absolute;
             z-index: 1;
+            top:15px;
+            left: 15px;
         }
-        canvas{
+        #vis{
             position: fixed;
+            top:0px;
+            left: 0px;
+        }
+        h1{
+            position: absolute;
+            top:50%;
+            left: 50%;
+            margin-left: -200px;
+            width: 400px;
+            margin-top: -50px;
+            height: 50px;
+            z-index: 2;
+            text-align: center;
+            text-shadow:
+                -3px -3px 0 #fff,
+                3px -3px 0 #fff,
+                -3px 3px 0 #fff,
+                3px 3px 0 #fff;  
+        }
+        .text{
+            position: relative;
+            z-index: 2;
+            margin-top: 100px;
+        }
+
+        .section{
+            min-height: 600px;
         }
     </style>
   </head>
   <body>
+    <h1>Aenean eget tempus</h1>
+    <div id="vis"></div>
+    <div class="container-fluid text">
+        <div class="row section">
+            <div class="col-md-offset-9 col-md-3">
+                lorem
+            </div>
+        </div>
+        <div class="row section">
+            <div class="col-md-offset-9 col-md-3">
+                lorem
+            </div>
+        </div>
+        <div class="row section">
+            <div class="col-md-offset-9 col-md-3">
+                lorem
+            </div>
+        </div>
+        <div class="row section">
+            <div class="col-md-offset-9 col-md-3">
+                lorem
+            </div>
+        </div>
+        <div class="row section">
+            <div class="col-md-offset-9 col-md-3">
+                lorem
+            </div>
+        </div>
+    </div>
     <div class="btn-group">
         <div class="btn btn-graph-1">Graph A</div>
         <div class="btn btn-graph-2">Graph B</div>
         <div class="btn btn-graph-3">Map</div>
         <div class="btn btn-zoom">Zoom</div>
     </div>
-
-    <div id="vis"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js"></script>
     <script src="https://d3js.org/d3-force.v1.min.js"></script>
@@ -38,24 +98,50 @@
         var base = d3.select("#vis");
         var geodata
         var simulation
+        var zoomed = false;
 
-        var width = $(window).width(),
-            height = $(window).height();
+        var cx =  cy = 0
+        var frameIndex = 0
+
+        // set projection
+        var projection = d3.geoMercator();
+        
+        // Bounds
+        var bounds = [[10.585, 47.986], // SW,
+                      [5.713, 45.809]] // NE
+
+        var width = $(window).width()
+            height = width * 
+            (projection(bounds[0])[1] - projection(bounds[1])[1]) /
+            (projection(bounds[1])[0] - projection(bounds[0])[0]);
+
+        // set projection parameters
+        projection
+          .scale(1)
+          .translate([0, 0])
+
+        var b = [projection(bounds[0]), projection(bounds[1])]
+            s = 1 / Math.max((b[1][0] - b[0][0]) / width, (b[1][1] - b[0][1]) / height),
+            t = [(width - s * (b[1][0] + b[0][0])) / 2, (height - s * (b[1][1] + b[0][1])) / 2];
+
+        projection
+            .scale(s)
+            .translate(t);
+
+        /*projection
+            .scale(13000)
+            .center([7.5, 47.2])
+            .translate([0,0]);*/
+
+        // create path variable
+        var path = d3.geoPath()
+            .projection(projection);
 
         var chart = base.append("canvas")
           .attr("width", width)
           .attr("height", height);
 
         var context = chart.node().getContext("2d");
-
-        // set projection
-        var projection = d3.geoMercator();
-
-        // create path variable
-        var path = d3.geoPath()
-            .projection(projection);
-
-        var zoom = d3.zoom()
 
         // Create an in memory only element of type 'custom'
         var detachedContainer = document.createElement("custom");
@@ -68,11 +154,6 @@
 
         d3.json("ch_roundabouts-EPSG4326.geojson", function(error, geo){
             geodata = geo
-
-            // set projection parameters
-            projection
-              .scale(13000)
-              .center([7.5, 47.2])
 
             // Create the points from the data
             dataBindingPoints = dataContainer.selectAll("custom.circle")
@@ -93,7 +174,10 @@
                         d.geometry.coordinates[1]])[1] - 19;
                 })
                 .attr("r", 1)
-                .attr("fill", "#fb1ba244");
+                .attr("red", "132")
+                .attr("green", "80")
+                .attr("blue", "137")
+                .attr("opacity", "0.4")
             
             charge = d3.forceManyBody()
             charge.strength(0)
@@ -146,7 +230,7 @@
 
         function drawCanvas() {
             // clear canvas
-            context.fillStyle = "#f5f6f7";
+            context.fillStyle = "#ffffff";
             context.rect(0,0,chart.attr("width"),chart.attr("height"));
             context.fill();
 
@@ -155,11 +239,23 @@
             circleElements.each(function(d) {
                 var node = d3.select(this);
                 context.beginPath();
-                context.fillStyle = node.attr("fill");
+                context.fillStyle = "rgba("+node.attr("red")+","+node.attr("green")+","+node.attr("blue")+","+ node.attr("opacity") +")";
                 context.arc(node.attr("x"),node.attr("y"),node.attr("r"),0,2*Math.PI);
                 context.fill();
                 context.closePath();
             });
+
+            // Draw cars
+            /*cx = width/2 + Math.cos(frameIndex/10)  * 300
+            cy = height/2 + Math.sin(frameIndex/10)  * 300
+
+            context.beginPath();
+            context.fillStyle = "#00ffff";
+            context.arc(cx, cy, 6,0,2*Math.PI);
+            context.fill();
+            context.closePath();
+
+            frameIndex += 1;*/
         }
 
         $(".btn-graph-1").on("click", function(){
@@ -176,6 +272,7 @@
               .transition()
               .ease(d3.easePolyOut)
               .duration(1000)
+              .attr("opacity", "1")
               .attr('r', function (d) { return 2 });
 
             charge.strength(-4)
@@ -202,18 +299,14 @@
         })
 
         $(".btn-graph-3").on("click", function(){
-            dataContainer.selectAll("custom.circle")
-              .transition()
-              .ease(d3.easePolyOut)
-              .duration(1000)
-              .attr('r', function (d) { return 2 });
-
             simulation.stop()
             
             dataContainer.selectAll("custom.circle")
-              .transition()
-              .ease(d3.easePolyOut)
-              .duration(2000)
+                .transition()
+                .ease(d3.easePolyOut)
+                .duration(2000)
+                .attr("opacity", "0.4")
+                .attr('r', function (d) { return 1 })
                 .attr("x", function(d) {
                 return projection([
                     d.geometry.coordinates[0], 
@@ -222,31 +315,41 @@
                 .attr("y", function(d) {
                 return projection([
                     d.geometry.coordinates[0],
-                    d.geometry.coordinates[1]])[1] - 19;
+                    d.geometry.coordinates[1]])[1];
                 })   
 
         })
 
         $(".btn-zoom").on("click", function(){
-            projection
-              .scale(120000)
-              .center([6.62, 46.52])
+            if(!zoomed){
+                projection
+                    .scale(120000)
+                    .translate([width/2,height/2])
+                    .center([6.62, 46.52])
+            }else{
+                projection
+                    .center([0, 0])
+                    .scale(s)
+                    .translate(t);
+            }
 
             dataContainer.selectAll("custom.circle")
-              .transition()
-              .ease(d3.easePolyOut)
-              .duration(2000)
-                .attr('r', function (d) { return Math.random()*5; })
+                .transition()
+                .ease(d3.easePolyOut)
+                .duration(2000)
+                .attr('r', function (d) { return 3; })
                 .attr("x", function(d) {
-                return projection([
-                    d.geometry.coordinates[0], 
-                    d.geometry.coordinates[1]])[0];
+                    return projection([
+                        d.geometry.coordinates[0], 
+                        d.geometry.coordinates[1]])[0];
                 })
                 .attr("y", function(d) {
-                return projection([
-                    d.geometry.coordinates[0],
-                    d.geometry.coordinates[1]])[1] - 19;
-                })              
+                    return projection([
+                        d.geometry.coordinates[0],
+                        d.geometry.coordinates[1]])[1] - 19;
+                })
+
+            zoomed = !zoomed            
         })
 
     </script>
