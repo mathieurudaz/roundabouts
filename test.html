@@ -5,43 +5,129 @@
         <title>d3 webGL force graph with PIXI.js</title>
         <meta name="description" content="">
         <meta name="theme-color" content="#000000">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css" />
+        <style type="text/css">
+          .title{ 
+            margin-bottom: 20px;
+          }
+          .container{
+            display: flex;
+            align-items: center;
+            justify-content: left;
+            position: relative;
+          }
+          .line{
+            height: 1px;
+            background-color: #cd14ff;
+            width: 100%;
+            z-index: 0;
+            position: absolute;
+          }
+          .line.bold{
+            height: 3px;
+          }
+          .circles{
+            position: absolute;
+            z-index: 1;
+            width: 100%;
+          }
+          .circle{
+            top:50%;
+            margin-top: -12px;
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+          }
+          .circle .inner{
+            width: 70%;
+            height: 70%;
+            border-radius: 100%;
+            border: 1px solid #cd14ff;
+          }
+
+          .circle:nth-child(1) { left:  5%; }
+          .circle:nth-child(2) { left:  8%; }
+          .circle:nth-child(3) { left: 10%; }
+          .circle:nth-child(4) { left: 12%; }
+          .circle:nth-child(5) { left: 16%; }
+          .circle:nth-child(6) { left: 19%; }
+          .circle:nth-child(7) { left: 25%; }
+          .circle:nth-child(8) { left: 32%; }
+          .circle:nth-child(9) { left: 33%; }
+          .circle:nth-child(10){ left: 40%; }
+          .circle:nth-child(11){ left: 45%; }
+          .circle:nth-child(12){ left: 65%; }
+
+          .line.bold{
+            width: 0%;
+            border-radius: 3px;
+          }
+
+        </style>
     </head>
     <body>
+      <div class="ui text container">
+        <p>Donec vitae turpis ut est lobortis gravida. Vestibulum sed felis aliquet, lobortis tortor id, dapibus nulla. Ut ipsum augue, bibendum nec ex et, auctor finibus orci. Mauris semper vestibulum tempor. Etiam non iaculis lectus. Nunc commodo elit tincidunt lacus pellentesque, eu bibendum orci egestas. Praesent velit elit, varius in semper ut, consequat ac turpis. Aenean gravida, orci ut fermentum imperdiet, dolor dolor finibus felis, quis semper elit urna nec justo. Integer volutpat urna vel mi pulvinar auctor. Vestibulum mollis dui quam. In hac habitasse platea dictumst. Suspendisse potenti. Curabitur ac ante sit amet mauris molestie sodales. In venenatis lacus nec sapien sodales egestas. Sed ipsum nibh, pretium ut blandit et, hendrerit ut sapien.</p>
+      </div>
+      <div class="ui raised very padded text container segment center aligned">
+        <div class="direction">
+          <div class="title">Yverdon - Delémont</div>
+          <div class="container">
+            <div class="circles">
+              <div class="circle"><div class="inner"></div></div>
+              <div class="circle"><div class="inner"></div></div>
+              <div class="circle"><div class="inner"></div></div>
+              <div class="circle"><div class="inner"></div></div>
+              <div class="circle"><div class="inner"></div></div>
+              <div class="circle"><div class="inner"></div></div>
+              <div class="circle"><div class="inner"></div></div>
+              <div class="circle"><div class="inner"></div></div>
+              <div class="circle"><div class="inner"></div></div>
+              <div class="circle"><div class="inner"></div></div>
+              <div class="circle"><div class="inner"></div></div>
+              <div class="circle"><div class="inner"></div></div>
+            </div>
+            <div class="line bold" id="progress_line"></div>
+            <div class="line"></div>
+          </div>
+        </div>
+      </div>
+      <div class="ui text container">
+        <p>Etiam a semper tortor. Nam eu fringilla ante. Fusce facilisis risus nisl, ac auctor odio cursus ac. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Vivamus a felis malesuada, tempus felis ut, viverra magna. Aliquam egestas ligula sapien, in ornare est consequat eget. Duis ultricies mi sed volutpat scelerisque.</p>
+        <p>Pellentesque pharetra tempus aliquet. Vivamus sit amet velit maximus, fermentum est ut, viverra urna. Morbi euismod fringilla elit, consectetur fringilla libero vestibulum eu. Suspendisse potenti. Phasellus mi risus, ullamcorper nec risus a, scelerisque tempus tortor. Suspendisse et vestibulum odio. Phasellus eu erat ornare, ultricies ex consectetur, efficitur metus. Morbi tempor iaculis nisl, non scelerisque lectus euismod eu. Nam ex metus, volutpat ut euismod ac, consequat et ex. Suspendisse sem augue, lacinia vitae tellus eu, varius tincidunt erat.</p>
+      </div>
         <script src="https://cdn.polyfill.io/v2/polyfill.min.js?features=default"></script>
         <script src="https://d3js.org/d3.v4.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.3.2/pixi.min.js"></script>
         <script>
 
-        let width = 960, height = 600;
-        let stage = new PIXI.Container();
-        let renderer = PIXI.autoDetectRenderer(width, height,
-            {antialias: !0, transparent: !0, resolution: 1});
+          var start = null;
+          var d = document.getElementById("progress_line");
 
-        document.body.appendChild(renderer.view);
+          function tick(timestamp) {
+            var progress;
+            if (start === null) start = timestamp;
+            progress = timestamp - start;
+            d.style.width = progress/20 + "%";
 
-        let simulation = d3.forceSimulation()
-            .force('charge', d3.forceManyBody())
-            .force('center', d3.forceCenter(width / 2, height / 2));
-          
-        d3.json("miserables.json", function(error, graph) {
-            graph.nodes.forEach((node) => {
-                node.gfx = new PIXI.Graphics();
-                node.gfx.beginFill(0xff00ff);
-                node.gfx.drawCircle(0, 0, 5);
-                stage.addChild(node.gfx);
-            });
+            d3.selectAll(".circle").each(function(){
+              if( progress/20 > d3.select(this).style("left"))
+              console.log(d3.select(this).style("left"))
+              console.log( d3.select(this).attr("style", "border-width:2px;") )
+            })
 
-            simulation
-                .nodes(graph.nodes)
-                .on('tick', ticked);
-
-          function ticked() {
-              graph.nodes.forEach((node) => {
-                  node.gfx.position = new PIXI.Point(node.x, node.y);
-              });
-              renderer.render(stage);
+            if (progress > 2000) {
+              start = timestamp
+            }
+            requestAnimationFrame(tick);
           }
-        });
+
+          requestAnimationFrame(tick);
 
         </script>
     </body>

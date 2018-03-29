@@ -200,6 +200,29 @@
                         node.gfx, 1, {alpha: 1}
                     )
                 });
+
+                projection
+                    .scale(120000)
+                    .translate([width/2,height/2])
+                    .center([6.62, 46.52])
+                
+            })
+
+            $(".btn-graph-3").on("click", function(){
+                //simulation.stop()
+                
+                geo.features.forEach(node => {
+                    TweenMax.to(
+                        node.gfx, 1, {
+                            x: projection([
+                                node.geometry.coordinates[0], 
+                                node.geometry.coordinates[1]])[0],
+                            y: projection([
+                                node.geometry.coordinates[0],
+                                node.geometry.coordinates[1]])[1]
+                            }
+                    )
+                }); 
             })
 
         });
@@ -229,27 +252,7 @@
             simulation.restart()
         })
 
-        $(".btn-graph-3").on("click", function(){
-            simulation.stop()
-            
-            dataContainer.selectAll("custom.circle")
-                .transition()
-                .ease(d3.easePolyOut)
-                .duration(2000)
-                .attr("opacity", "0.4")
-                .attr('r', function (d) { return 1 })
-                .attr("x", function(d) {
-                return projection([
-                    d.geometry.coordinates[0], 
-                    d.geometry.coordinates[1]])[0];
-                })
-                .attr("y", function(d) {
-                return projection([
-                    d.geometry.coordinates[0],
-                    d.geometry.coordinates[1]])[1];
-                })   
 
-        })
 
         $(".btn-zoom").on("click", function(){
             if(!zoomed){
